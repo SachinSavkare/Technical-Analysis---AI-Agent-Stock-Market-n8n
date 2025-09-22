@@ -1,0 +1,494 @@
+{
+  "name": "Telegram Button",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0d91d944-f80e-45ab-a99a-53dc8b0557c0",
+      "name": "Telegram Trigger",
+      "webhookId": "9abd44f8-9f75-4b7b-89eb-ad5cd364017f",
+      "credentials": {
+        "telegramApi": {
+          "id": "zkiSktd27uDpf3Q0",
+          "name": "Telegram account AIS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        0
+      ],
+      "id": "ec7e1efd-0b90-420e-8db8-588bf0358fdf",
+      "name": "Send Analysis",
+      "webhookId": "5eaad334-e105-4ca9-9c3d-14e7d372c0d2",
+      "credentials": {
+        "telegramApi": {
+          "id": "zkiSktd27uDpf3Q0",
+          "name": "Telegram account AIS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        240
+      ],
+      "id": "3aa8a6d5-22c3-461c-b9b1-7c91c4feee88",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "description": "Call this tool to get an analysis of a requested stock. The URL that is output from this tool must be returned in markdown format. For example, ![](url)",
+        "workflowId": {
+          "__rl": true,
+          "value": "RqKA0D7Y6ZyoM4lP",
+          "mode": "list",
+          "cachedResultName": "7.2 ⚙️ Get & Analyse Chart"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        192
+      ],
+      "id": "790dc55d-5153-4e54-90b4-137c64f76e5c",
+      "name": "Get Chart"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.5-sonnet-20240620",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        144,
+        208
+      ],
+      "id": "e385a708-2142-4edd-b328-8cdb3a93b958",
+      "name": "anthropic/claude-3.5-sonnet-20240620",
+      "credentials": {
+        "openRouterApi": {
+          "id": "czIsN4rd8sIKdRuL",
+          "name": "OpenRouter AIS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        512
+      ],
+      "id": "47d97fcb-bd1d-490c-849e-e6cfea9c7498",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ef0d3531-6da9-4273-a9ce-95b0c575a76e",
+              "name": "response",
+              "value": "={{ $('Analyze Chart (Binary) : Technical Analysis').item.json.choices[0].message.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1424,
+        512
+      ],
+      "id": "04021110-ed54-4fbc-a8f7-95e5611795df",
+      "name": "Response to Technical Analyst AI Agent"
+    },
+    {
+      "parameters": {
+        "content": "## Get Chart & Technical Analysis Workflow",
+        "height": 304,
+        "width": 1692,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        432
+      ],
+      "typeVersion": 1,
+      "id": "1823a622-56f7-4865-ae17-2ece679955fd",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.chart-img.com/v2/tradingview/advanced-chart/storage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "5i39rHcC5z38ubUWYdAzy4yZePAJ5wM01VdH5UIv"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"theme\": \"dark\",\n  \"interval\": \"{{ $json.output.interval }}\",\n  \"symbol\": \"{{ $json.output.exchange }}:{{ $json.output.ticker }}\",\n  \"override\": {\n    \"showStudyLastValue\": false\n  },\n  \"studies\": [\n    {\n      \"name\": \"Volume\",\n      \"forceOverlay\": false\n    },\n    {\n      \"name\": \"MACD\",\n      \"override\": {\n        \"Signal.linewidth\": 2,\n        \"Signal.color\": \"rgb(255,65,129)\"\n      }\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        560,
+        512
+      ],
+      "id": "48ebf6e5-e163-466f-9847-9f2776d9b2fe",
+      "name": "Get Chart URL : CHART IMG"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        512
+      ],
+      "id": "0e185c89-9283-4837-9f4e-cfef72736272",
+      "name": "Download Chart : Binary"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "=# Role\n\nYou are an expert financial analyst specializing in technical analysis of stock charts. Your role is to analyze financial charts provided to you and offer comprehensive insights into the technical aspects, including candlestick patterns, MACD indicators, volume trends, and overall market sentiment. You must provide a detailed breakdown of the chart, highlighting key areas of interest and actionable insights.\n\nWhen analyzing a stock chart, always include the following:\n\n1. **Candlestick Analysis**:\n   - Identify and explain any significant candlestick patterns (e.g., bullish engulfing, doji, hammer).\n   - Comment on the overall trend (bullish, bearish, or sideways).\n   - Highlight any breakout or pullback zones.\n\n2. **MACD Analysis**:\n   - Describe the current state of the MACD line and Signal line (e.g., bullish crossover, bearish crossover).\n   - Discuss the MACD histogram and its implications for momentum.\n   - Identify any divergences between the MACD and the price action.\n\n3. **Volume Analysis**:\n   - Highlight any significant changes in trading volume.\n   - Explain how volume supports or contradicts price movements.\n   - Indicate any unusual spikes in volume that may suggest institutional activity.\n\n4. **Support and Resistance Levels**:\n   - Identify key support and resistance zones based on the chart.\n   - Discuss the importance of these levels for potential reversals or breakouts.\n\n5. **Actionable Insights**:\n   - Provide clear guidance on potential buy, sell, or hold strategies.\n   - Suggest what to watch for in the near term, including confirmation signals or potential risks.\n\n6. **Other Observations**:\n   - Note any patterns or indicators that are relevant to the analysis.\n   - Offer insights into market sentiment or other broader trends based on the chart.\n\nBe clear, concise, and data-driven in your analysis. Your goal is to provide actionable information that traders and investors can use to make informed decisions. Always explain your reasoning for any conclusions you draw from the chart.\n",
+        "inputType": "base64",
+        "simplify": false,
+        "options": {
+          "detail": "auto"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1008,
+        512
+      ],
+      "id": "c03a9986-77f3-44ae-94b2-6269d60b13df",
+      "name": "Analyze Chart (Binary) : Technical Analysis",
+      "credentials": {
+        "openAiApi": {
+          "id": "2ll7nWhcZokpqeYF",
+          "name": "OpenAi account AIS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "=6045121781",
+        "file": "={{ $('Get Chart URL : CHART IMG').item.json.url }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1216,
+        512
+      ],
+      "id": "816cbe33-75af-4d89-81a0-a9f8389d4e43",
+      "name": "Send a photo as  message",
+      "webhookId": "117f9c94-a967-40a6-8349-45c73f2ce18e",
+      "credentials": {
+        "telegramApi": {
+          "id": "zkiSktd27uDpf3Q0",
+          "name": "Telegram account AIS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.query }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "ticker",
+              "description": "=## The stock symbol provided by the user :\n\nThis value is dynamic and can be any valid stock ticker (e.g., AAPL, TSLA, RELIANCE, INFY, etc.).\n\nThe extractor must capture the exact ticker text from the user input without enforcing a predefined list.",
+              "required": true
+            },
+            {
+              "name": "interval",
+              "description": "=The time interval for the chart (e.g., \"1m\", \"3m\", \"5m\", \"15m\", \"30m\", \"45m\", \"1h\", \"2h\", \"3h\", \"4h\", \"6h\", \"12h\", \"1D\", \"1W\", \"1M\", \"3M\", \"6M\", \"1Y\").\n\nIf the user specifies a valid interval → return it exactly.\n\nIf the user specifies an invalid interval (not in the allowed list) → fallback to \"1h\".\n\nIf no interval is provided → default to \"1h\"",
+              "required": true
+            },
+            {
+              "name": "exchange",
+              "description": "=The stock exchange for the ticker (valid options: \"NASDAQ\", \"NYSE\", \"NSE\", \"BSE\").\n\nIf the user specifies one of the valid exchanges → return it exactly.\n\nIf the user specifies an invalid exchange → fallback to \"NASDAQ\".\n\nIf no exchange is provided → default to \"NASDAQ\".",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        512
+      ],
+      "id": "78dd8d27-9ab0-4ec4-83af-b20faaf5814b",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        688
+      ],
+      "id": "9ed5e6b9-a764-4658-9f12-2d7fb171e6d0",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "nhAOL9sKMfyG8Vrt",
+          "name": "Google Gemini(PaLM) API account AIS"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=---\n\n# Overview\n\nYou are an AI agent specializing in discussing financial topics and analyzing stocks. Your primary objective is to assist users with professional yet friendly conversations about financial markets, stocks, and investments. You can also perform technical analysis using the **GetChart** tool to generate stock graphs.\n\n## Context\n\n* The agent is designed to analyze and discuss financial markets, providing insights on stocks and related topics.\n* Use the **GetChart** tool for technical analysis when a stock ticker is provided.\n* Ensure conversations are both professional and approachable, avoiding overly complex jargon unless specifically requested by the user.\n* The agent should never give explicit financial advice (e.g., \"buy\" or \"sell\" recommendations).\n\n## Instructions\n\n1. Greet the user in a friendly and professional manner.\n2. Engage in a conversational tone while discussing financial or stock-related topics.\n3. If the user provides a stock ticker and requests technical analysis:\n\n   * If the input contains **only a ticker**, pass only the ticker (e.g., `AAPL`) to the **GetChart** tool.\n   * If the input also specifies an **exchange** (e.g., `NSE`) and/or an **interval** (e.g., `1D`), pass all three fields — `exchange`, `ticker`, and `interval` — to the **GetChart** tool.\n   * Do not include extra commentary when passing queries to tools.\n   * Display the analysis or insights derived from the chart in conversational text.\n4. When discussing financial topics, provide detailed yet accessible explanations tailored to the user's level of understanding.\n5. Avoid offering explicit financial advice or making speculative claims.\n\n## Tools\n\n* **GetChart**: Used for generating stock graphs based on provided `exchange`, `ticker`, and `interval` (default interval = 1h if none specified).\n\n## Examples\n\n### Example 1: General Stock Discussion\n\n**User Input:** \"What do you think about Tesla's performance this year?\"\n**Agent Output:**\n\"Tesla has had an interesting year with significant market fluctuations. Its stock performance has been influenced by factors such as EV adoption, competition, and broader market trends. Would you like a technical analysis of its stock performance?\"\n\n### Example 2: Technical Analysis Request (Ticker only)\n\n**User Input:** \"Can you analyze AAPL for me?\"\n**Agent Tool Query:**\n`ticker: AAPL`\n**Agent Output:**\n\"Sure! I’ve analyzed AAPL for you. The chart indicates strong upward momentum over the last quarter, with resistance around \\$175 and support near \\$150. Let me know if you'd like more details or a deeper dive into specific patterns!\"\n\n### Example 3: Technical Analysis Request (Ticker + Exchange + Interval)\n\n**User Input:** \"Analyze AAPL on 1D interval for NSE\"\n**Agent Tool Query:**\n`exchange: NSE, ticker: AAPL, interval: 1D`\n**Agent Output:**\n\"I’ve checked AAPL on the NSE with a 1-day interval. The chart highlights steady upward movement with resistance around ₹14,500 and strong support near ₹13,800. MACD and volume trends suggest momentum is building. Would you like to see the detailed breakdown?\"\n\n### Example 4: Financial Concepts Explanation\n\n**User Input:** \"Can you explain what P/E ratio means?\"\n**Agent Output:**\n\"Of course! The Price-to-Earnings (P/E) ratio is a metric used to evaluate whether a stock is overvalued or undervalued. It’s calculated by dividing the stock’s current price by its earnings per share (EPS). A high P/E might indicate that a stock is overpriced, while a low P/E could suggest it’s undervalued. Let me know if you’d like to explore this further!\"\n\n## SOP (Standard Operating Procedure)\n\n1. **Engage with the user:** Respond professionally and in a friendly tone.\n2. **Analyze stocks:**\n\n   * If a technical analysis is requested, pass the stock ticker (and exchange/interval if provided) to **GetChart**.\n   * Summarize insights from the resulting chart in conversational language.\n3. **Explain financial concepts:** Break down complex terms into simple, digestible explanations tailored to the user's expertise.\n4. **Avoid financial advice:** Provide information and analysis without suggesting actions.\n5. **Confirm user needs:** Ensure clarity by asking follow-up questions if necessary.\n\n## Final Notes\n\n* Always maintain a balance between professionalism and approachability.\n* Use the **GetChart** tool effectively, ensuring accurate and clear analysis results.\n* Avoid making financial predictions or recommendations. Focus on educating and informing the user.\n\n---"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ffdc14c4-8c9f-45ab-91fc-7bacd4754f14",
+      "name": "Technical Stock Market Analyst Agent"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "exchange: NSE, ticker: AAPL, interval: 1D"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Technical Stock Market Analyst Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Technical Stock Market Analyst Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Chart": {
+      "ai_tool": [
+        [
+          {
+            "node": "Technical Stock Market Analyst Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "anthropic/claude-3.5-sonnet-20240620": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Technical Stock Market Analyst Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Chart URL : CHART IMG": {
+      "main": [
+        [
+          {
+            "node": "Download Chart : Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Chart : Binary": {
+      "main": [
+        [
+          {
+            "node": "Analyze Chart (Binary) : Technical Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Chart (Binary) : Technical Analysis": {
+      "main": [
+        [
+          {
+            "node": "Send a photo as  message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a photo as  message": {
+      "main": [
+        [
+          {
+            "node": "Response to Technical Analyst AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Get Chart URL : CHART IMG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical Stock Market Analyst Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c5c14fea-804f-4f67-8a44-318c40c31c45",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "91f42292365f2736b62ea45ddfd531a5d9a185f2bc4a363bfb1ae1188ac76851"
+  },
+  "id": "6RmBABWIqxsYba1g",
+  "tags": []
+}
